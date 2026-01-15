@@ -10,6 +10,22 @@
 
 A smart Flutter form wrapper that validates fields, auto-focuses & scrolls to the first invalid field, and provides pleasant visual feedback with shake animations and soft glow effects.
 
+## 📸 Screenshots
+
+<p align="center">
+  <img src="screens/1.png" width="200" alt="Empty Form"/>
+  <img src="screens/2.png" width="200" alt="Required Error"/>
+  <img src="screens/3.png" width="200" alt="Email Required"/>
+  <img src="screens/4.png" width="200" alt="Email Validation"/>
+</p>
+
+<p align="center">
+  <img src="screens/5.png" width="200" alt="Phone Required"/>
+  <img src="screens/6.png" width="200" alt="Password Required"/>
+  <img src="screens/7.png" width="200" alt="Password Length"/>
+  <img src="screens/8.png" width="200" alt="Password Uppercase"/>
+</p>
+
 ## ✨ Features
 
 - 🎯 **Auto-focus** first invalid field on submit
@@ -155,6 +171,14 @@ SmartSubmitButton(
   icon: Icons.send,
 )
 ```
+
+## 🗺️ Roadmap
+
+- [ ] Additional field types (date, dropdown, checkbox)
+- [ ] Haptic feedback option
+- [ ] Form state persistence
+- [ ] Custom animation options
+- [ ] Real-time validation mode
 
 ## 🧪 Testing
 
