@@ -178,7 +178,7 @@ class _SmartDropdownState<T> extends State<SmartDropdown<T>> {
                               : null,
                 ),
                 child: DropdownButtonFormField<T>(
-                  value: _currentValue,
+                  initialValue: _currentValue,
                   items: widget.items,
                   focusNode: _focusNode,
                   isExpanded: true,

@@ -1,3 +1,8 @@
+## 2.0.2
+
+- Update `intl` dependency to ^0.20.0 for latest version support
+- Fix deprecated `value` parameter in DropdownButtonFormField (use `initialValue`)
+
 ## 2.0.1
 
 - Fix demo GIF not displaying on pub.dev (use absolute GitHub URL)
