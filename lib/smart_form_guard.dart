@@ -21,6 +21,9 @@ export 'src/smart_form.dart';
 export 'src/smart_field.dart';
 export 'src/smart_submit_button.dart';
 export 'src/smart_validators.dart';
+export 'src/smart_dropdown.dart';
+export 'src/smart_checkbox.dart';
+export 'src/smart_date_picker.dart';
 export 'src/smart_controller.dart' 
     show SmartFormController, SmartFormScope;
 export 'src/animations/shake_animation.dart';

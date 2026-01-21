@@ -1,57 +1,72 @@
 # smart_form_guard
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Flutter-Package-blue?logo=flutter" alt="Flutter Package"/>
-  <img src="https://img.shields.io/badge/version-0.1.0-green" alt="Version"/>
+  <img src="https://img.shields.io/pub/v/smart_form_guard?color=blue&logo=dart" alt="Pub Version"/>
+  <img src="https://img.shields.io/badge/Flutter-3.0+-02569B?logo=flutter" alt="Flutter"/>
+  <img src="https://img.shields.io/badge/Platform-Android%20%7C%20iOS%20%7C%20Web%20%7C%20Desktop-brightgreen" alt="Platform"/>
   <img src="https://img.shields.io/badge/license-MIT-purple" alt="License"/>
 </p>
 
-> **Forms that guide users instead of punishing them.**
-
-A smart Flutter form wrapper that validates fields, auto-focuses & scrolls to the first invalid field, and provides pleasant visual feedback with shake animations and soft glow effects.
-
-## 📸 Screenshots
-
 <p align="center">
-  <img src="screens/1.png" width="200" alt="Empty Form"/>
-  <img src="screens/2.png" width="200" alt="Required Error"/>
-  <img src="screens/3.png" width="200" alt="Email Required"/>
-  <img src="screens/4.png" width="200" alt="Email Validation"/>
+  <strong>🛡️ Forms that guide users instead of punishing them.</strong>
 </p>
 
 <p align="center">
-  <img src="screens/5.png" width="200" alt="Phone Required"/>
-  <img src="screens/6.png" width="200" alt="Password Required"/>
-  <img src="screens/7.png" width="200" alt="Password Length"/>
-  <img src="screens/8.png" width="200" alt="Password Uppercase"/>
+  A smart Flutter form wrapper that validates fields, auto-focuses & scrolls to the first invalid field, and provides pleasant visual feedback with shake animations, soft glow effects, and real-time validation states.
 </p>
 
-## ✨ Features
+---
 
-- 🎯 **Auto-focus** first invalid field on submit
-- 📜 **Auto-scroll** to off-screen errors
-- 🌊 **Shake animation** for invalid fields
-- ✨ **Soft glow** effect on errors
-- 🔄 **Progressive validation** (one error at a time)
-- 📦 **Zero configuration** for common use cases
-- 🎨 **Customizable** styling and behavior
+## 🎬 Demo
+
+<p align="center">
+  <img src="screens/1.mp4" width="300" alt="Smart Form Guard Demo"/>
+</p>
+
+---
+
+## ✨ Why smart_form_guard?
+
+| ❌ Traditional Forms | ✅ Smart Form Guard |
+|---------------------|---------------------|
+| Shows all errors at once | Progressive validation (one at a time) |
+| User hunts for invalid fields | Auto-focuses & scrolls to errors |
+| Static error messages | Shake animation + glow effects |
+| No positive feedback | ✅ Green checkmarks when valid |
+| Manual state management | Zero configuration needed |
+
+---
+
+## 🚀 Features
+
+| Feature | Description |
+|---------|-------------|
+| 🎯 **Auto-focus** | Instantly focuses the first invalid field |
+| 📜 **Auto-scroll** | Smoothly scrolls to off-screen errors |
+| 🌊 **Shake Animation** | Eye-catching shake on validation failure |
+| ✨ **Glow Effects** | Red glow for errors, green glow for valid |
+| ✅ **Valid State** | Green borders & checkmarks when correct |
+| 📳 **Haptic Feedback** | Subtle vibration on errors |
+| 🔄 **Real-time Validation** | Optional autovalidate mode |
+| 🗂️ **Rich Field Types** | Text, Email, Password, Phone, Dropdown, Checkbox, DatePicker |
+| 📦 **Zero Config** | Works out of the box |
+
+---
 
 ## 📦 Installation
 
-Add to your `pubspec.yaml`:
-
 ```yaml
 dependencies:
-  smart_form_guard: ^0.1.0
+  smart_form_guard: ^2.0.0
 ```
-
-Then run:
 
 ```bash
 flutter pub get
 ```
 
-## 🚀 Quick Start
+---
+
+## 🎯 Quick Start
 
 ```dart
 import 'package:smart_form_guard/smart_form_guard.dart';
@@ -61,124 +76,142 @@ SmartForm(
   child: Column(
     children: [
       SmartField.email(
-        controller: emailCtrl,
+        controller: emailController,
         label: "Email",
       ),
       SmartField.password(
-        controller: passCtrl,
+        controller: passwordController,
         label: "Password",
       ),
       SmartSubmitButton(
-        text: "Create account",
+        text: "Create Account",
+        icon: Icons.arrow_forward,
       ),
     ],
   ),
 );
 ```
 
-## 📖 API Reference
+That's it! No boilerplate. No manual focus management. No manual scroll logic.
 
-### SmartForm
+---
 
-The main wrapper for your form fields.
+## 📖 Available Widgets
+
+### SmartField Constructors
+
+| Widget | Description |
+|--------|-------------|
+| `SmartField.email()` | Email with validation |
+| `SmartField.password()` | Password with toggle & strength rules |
+| `SmartField.required()` | Required text field |
+| `SmartField.phone()` | Phone number validation |
+
+### Additional Smart Widgets
+
+| Widget | Description |
+|--------|-------------|
+| `SmartDropdown<T>()` | Dropdown with validation & icons |
+| `SmartCheckbox()` | Checkbox for terms/agreements |
+| `SmartDatePicker()` | Date selection with validation |
+| `SmartSubmitButton()` | Submit with loading state |
+
+---
+
+## 🎨 Customization Examples
+
+### Custom Validators
+
+```dart
+SmartField(
+  controller: usernameController,
+  label: 'Username',
+  validator: SmartValidators.compose([
+    SmartValidators.required('Username is required'),
+    SmartValidators.minLength(3, 'At least 3 characters'),
+    SmartValidators.pattern(
+      RegExp(r'^[a-zA-Z0-9_]+$'),
+      'Only letters, numbers, and underscores',
+    ),
+  ]),
+  prefixIcon: Icons.person_outline,
+)
+```
+
+### Password with Custom Rules
+
+```dart
+SmartField.password(
+  controller: passwordController,
+  label: 'Password',
+  minLength: 10,
+  requireUppercase: true,
+  requireLowercase: true,
+  requireDigit: true,
+  requireSpecialChar: true,
+  autovalidateMode: AutovalidateMode.onUserInteraction,
+)
+```
+
+### Styled Dropdown
+
+```dart
+SmartDropdown<String>(
+  label: 'Country',
+  hint: 'Select your country',
+  prefixIcon: Icons.public,
+  value: selectedCountry,
+  items: countries.map((c) => DropdownMenuItem(
+    value: c.code,
+    child: Row(children: [
+      Text(c.flag),
+      SizedBox(width: 8),
+      Text(c.name),
+    ]),
+  )).toList(),
+  validator: (v) => v == null ? 'Required' : null,
+  onChanged: (v) => setState(() => selectedCountry = v),
+)
+```
+
+---
+
+## ⚙️ SmartForm Options
 
 | Property | Type | Description |
 |----------|------|-------------|
 | `child` | `Widget` | Form content (required) |
-| `onValid` | `VoidCallback?` | Called when form is valid |
+| `onValid` | `VoidCallback?` | Called when form passes validation |
 | `onInvalid` | `VoidCallback?` | Called when validation fails |
-| `controller` | `SmartFormController?` | Optional external controller |
+| `controller` | `SmartFormController?` | External controller for advanced use |
+| `enableHapticFeedback` | `bool` | Enable/disable haptics (default: true) |
 
-### SmartField
+---
 
-Input field with built-in validation and animations.
+## 🔧 SmartValidators
 
-#### Factory Constructors
-
-| Constructor | Description |
-|-------------|-------------|
-| `SmartField.email()` | Email input with validation |
-| `SmartField.password()` | Password with visibility toggle |
-| `SmartField.required()` | Required text field |
-| `SmartField.phone()` | Phone number input |
-
-#### Common Properties
-
-| Property | Type | Default |
-|----------|------|---------|
-| `controller` | `TextEditingController` | Required |
-| `label` | `String?` | null |
-| `hint` | `String?` | null |
-| `enabled` | `bool` | true |
-
-### SmartSubmitButton
-
-Triggers form validation on press.
-
-| Property | Type | Default |
-|----------|------|---------|
-| `text` | `String` | Required |
-| `onPressed` | `VoidCallback?` | null |
-| `icon` | `IconData?` | null |
-| `showLoading` | `bool` | true |
-
-### SmartValidators
-
-Utility class with common validators.
+Pre-built validators with customizable messages:
 
 ```dart
-// Compose multiple validators
-SmartValidators.compose([
-  SmartValidators.required('Field is required'),
-  SmartValidators.email('Invalid email'),
-]);
-
-// Available validators
-SmartValidators.required()
-SmartValidators.email()
-SmartValidators.password(minLength: 8, requireUppercase: true)
-SmartValidators.phone()
-SmartValidators.minLength(5)
-SmartValidators.maxLength(100)
-SmartValidators.pattern(RegExp(r'...'))
-```
-
-## 🎨 Customization
-
-### Custom Field
-
-```dart
-SmartField(
-  controller: controller,
-  label: 'Custom Field',
-  validator: SmartValidators.compose([
-    SmartValidators.required(),
-    SmartValidators.minLength(3),
-  ]),
-  prefixIcon: Icons.star,
-  decoration: InputDecoration(...),
+SmartValidators.required([message])
+SmartValidators.email([message])
+SmartValidators.phone([message])
+SmartValidators.minLength(length, [message])
+SmartValidators.maxLength(length, [message])
+SmartValidators.pattern(regex, [message])
+SmartValidators.password(
+  minLength: 8,
+  requireUppercase: true,
+  requireLowercase: true,
+  requireDigit: true,
+  requireSpecialChar: false,
 )
+
+// Combine multiple:
+SmartValidators.compose([...validators])
 ```
 
-### Custom Submit Button
-
-```dart
-SmartSubmitButton(
-  text: 'Submit',
-  backgroundColor: Colors.indigo,
-  textColor: Colors.white,
-  borderRadius: 16,
-  icon: Icons.send,
-)
-```
-
-## 🗺️ Roadmap
-
-- [ ] Additional field types (date, dropdown, checkbox)
-- [ ] Haptic feedback option
-- [ ] Form state persistence
-- [ ] Custom animation options
-- [ ] Real-time validation mode
+---
 
 ## 🧪 Testing
 
@@ -186,10 +219,33 @@ SmartSubmitButton(
 flutter test
 ```
 
+All core functionality is covered with unit tests.
+
+---
+
+## 📋 Version 2.0.0 Highlights
+
+- ✅ **New Widgets**: SmartDropdown, SmartCheckbox, SmartDatePicker
+- ✅ **Valid State UI**: Green borders, glows, and checkmarks
+- ✅ **Haptic Feedback**: Subtle vibrations on validation errors
+- ✅ **Autovalidate Mode**: Real-time validation support
+- ✅ **Generic Validators**: Type-safe validation for any field type
+- ✅ **Premium Dropdown**: Icons, elevation, and smooth animations
+
+---
+
 ## 📄 License
 
 MIT License - see [LICENSE](LICENSE) for details.
 
 ---
 
-Made with ❤️ for the Flutter community
+<p align="center">
+  Made with ❤️ for the Flutter community
+</p>
+
+<p align="center">
+  <a href="https://github.com/Maher-Tec/smart_form_guard">⭐ Star on GitHub</a> •
+  <a href="https://github.com/Maher-Tec/smart_form_guard/issues">🐛 Report Bug</a> •
+  <a href="https://pub.dev/packages/smart_form_guard">📦 View on pub.dev</a>
+</p>

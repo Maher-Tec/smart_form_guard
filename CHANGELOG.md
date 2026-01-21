@@ -1,3 +1,21 @@
+## 2.0.0
+
+Major update with new field types, core refactoring, and UX enhancements.
+
+### New Features
+- **SmartDropdown**: A smart-styled dropdown button with validation.
+- **SmartCheckbox**: A smart checkbox tile with error message support.
+- **SmartDatePicker**: A smart wrapper for choosing dates.
+- **Autovalidate Mode**: Added support for `AutovalidateMode` in `SmartField`.
+- **Haptic Feedback**: Forms now provide subtle haptic feedback on validation errors.
+
+### Improvements & Refactoring
+- **Generic Registration**: The core registration system now supports any data type, making it easier to build custom smart fields.
+- **Dependency Update**: Added `intl` for better date formatting in `SmartDatePicker`.
+- **Better API**: `SmartValidators` now use generics for cleaner type checking.
+
+---
+
 ## 0.1.0
 
 Initial release of smart_form_guard — forms that guide users instead of punishing them.

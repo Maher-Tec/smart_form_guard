@@ -31,12 +31,16 @@ class SmartForm extends StatefulWidget {
   /// Optional external controller for advanced control.
   final SmartFormController? controller;
 
+  /// Whether to trigger haptic feedback on validation failure.
+  final bool enableHapticFeedback;
+
   const SmartForm({
     super.key,
     required this.child,
     this.onValid,
     this.onInvalid,
     this.controller,
+    this.enableHapticFeedback = true,
   });
 
   @override
@@ -59,6 +63,7 @@ class SmartFormState extends State<SmartForm> {
       _controller = SmartFormController();
       _ownsController = true;
     }
+    _controller.enableHapticFeedback = widget.enableHapticFeedback;
   }
 
   @override
@@ -76,6 +81,7 @@ class SmartFormState extends State<SmartForm> {
         _ownsController = true;
       }
     }
+    _controller.enableHapticFeedback = widget.enableHapticFeedback;
   }
 
   @override

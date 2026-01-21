@@ -1,12 +1,11 @@
-/// Signature for a function that validates a form field.
-typedef SmartValidator = String? Function(String? value);
+import 'smart_controller.dart';
 
 /// A collection of commonly used validators for form fields.
 class SmartValidators {
   SmartValidators._();
 
   /// Creates a validator that checks if the value is not empty.
-  static SmartValidator required([String? message]) {
+  static SmartValidator<String> required([String? message]) {
     return (value) {
       if (value == null || value.trim().isEmpty) {
         return message ?? 'This field is required';
@@ -16,7 +15,7 @@ class SmartValidators {
   }
 
   /// Creates a validator that checks if the value is a valid email address.
-  static SmartValidator email([String? message]) {
+  static SmartValidator<String> email([String? message]) {
     return (value) {
       if (value == null || value.trim().isEmpty) {
         return null; // Let required() handle empty check
@@ -38,7 +37,7 @@ class SmartValidators {
   /// - At least one uppercase letter
   /// - At least one lowercase letter
   /// - At least one digit
-  static SmartValidator password({
+  static SmartValidator<String> password({
     int minLength = 8,
     bool requireUppercase = true,
     bool requireLowercase = true,
@@ -76,7 +75,7 @@ class SmartValidators {
   }
 
   /// Creates a validator that checks if the value is a valid phone number.
-  static SmartValidator phone([String? message]) {
+  static SmartValidator<String> phone([String? message]) {
     return (value) {
       if (value == null || value.trim().isEmpty) {
         return null; // Let required() handle empty check
@@ -91,7 +90,7 @@ class SmartValidators {
   }
 
   /// Creates a validator that checks minimum length.
-  static SmartValidator minLength(int length, [String? message]) {
+  static SmartValidator<String> minLength(int length, [String? message]) {
     return (value) {
       if (value == null || value.isEmpty) {
         return null;
@@ -104,7 +103,7 @@ class SmartValidators {
   }
 
   /// Creates a validator that checks maximum length.
-  static SmartValidator maxLength(int length, [String? message]) {
+  static SmartValidator<String> maxLength(int length, [String? message]) {
     return (value) {
       if (value == null) {
         return null;
@@ -117,7 +116,7 @@ class SmartValidators {
   }
 
   /// Creates a validator that matches a custom regex pattern.
-  static SmartValidator pattern(RegExp regex, [String? message]) {
+  static SmartValidator<String> pattern(RegExp regex, [String? message]) {
     return (value) {
       if (value == null || value.isEmpty) {
         return null;
@@ -132,7 +131,7 @@ class SmartValidators {
   /// Composes multiple validators into one.
   /// 
   /// Returns the first error message found, or null if all pass.
-  static SmartValidator compose(List<SmartValidator> validators) {
+  static SmartValidator<T> compose<T>(List<SmartValidator<T>> validators) {
     return (value) {
       for (final validator in validators) {
         final error = validator(value);

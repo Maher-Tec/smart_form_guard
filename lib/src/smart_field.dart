@@ -21,10 +21,13 @@ class SmartField extends StatefulWidget {
   final String? hint;
 
   /// The validator function for this field.
-  final SmartValidator? validator;
+  final SmartValidator<String>? validator;
 
   /// Whether to obscure the text (for passwords).
   final bool obscureText;
+
+  /// The autovalidate mode for this field.
+  final AutovalidateMode? autovalidateMode;
 
   /// The keyboard type for this field.
   final TextInputType? keyboardType;
@@ -65,6 +68,7 @@ class SmartField extends StatefulWidget {
     this.onSubmitted,
     this.enabled = true,
     this.decoration,
+    this.autovalidateMode,
   });
 
   /// Creates an email field with email validation.
@@ -79,13 +83,14 @@ class SmartField extends StatefulWidget {
     ValueChanged<String>? onChanged,
     VoidCallback? onSubmitted,
     bool enabled = true,
+    AutovalidateMode? autovalidateMode,
   }) {
     return SmartField(
       key: key,
       controller: controller,
       label: label,
       hint: hint ?? 'Enter your email',
-      validator: SmartValidators.compose([
+      validator: SmartValidators.compose<String>([
         if (required) SmartValidators.required(requiredMessage),
         SmartValidators.email(invalidMessage),
       ]),
@@ -95,6 +100,7 @@ class SmartField extends StatefulWidget {
       onChanged: onChanged,
       onSubmitted: onSubmitted,
       enabled: enabled,
+      autovalidateMode: autovalidateMode,
     );
   }
 
@@ -115,13 +121,14 @@ class SmartField extends StatefulWidget {
     ValueChanged<String>? onChanged,
     VoidCallback? onSubmitted,
     bool enabled = true,
+    AutovalidateMode? autovalidateMode,
   }) {
     return SmartField(
       key: key,
       controller: controller,
       label: label,
       hint: hint ?? 'Enter your password',
-      validator: SmartValidators.compose([
+      validator: SmartValidators.compose<String>([
         if (required) SmartValidators.required(requiredMessage),
         SmartValidators.password(
           minLength: minLength,
@@ -140,6 +147,7 @@ class SmartField extends StatefulWidget {
       onChanged: onChanged,
       onSubmitted: onSubmitted,
       enabled: enabled,
+      autovalidateMode: autovalidateMode,
     );
   }
 
@@ -156,6 +164,7 @@ class SmartField extends StatefulWidget {
     ValueChanged<String>? onChanged,
     VoidCallback? onSubmitted,
     bool enabled = true,
+    AutovalidateMode? autovalidateMode,
   }) {
     return SmartField(
       key: key,
@@ -169,6 +178,7 @@ class SmartField extends StatefulWidget {
       onChanged: onChanged,
       onSubmitted: onSubmitted,
       enabled: enabled,
+      autovalidateMode: autovalidateMode,
     );
   }
 
@@ -184,13 +194,14 @@ class SmartField extends StatefulWidget {
     ValueChanged<String>? onChanged,
     VoidCallback? onSubmitted,
     bool enabled = true,
+    AutovalidateMode? autovalidateMode,
   }) {
     return SmartField(
       key: key,
       controller: controller,
       label: label,
       hint: hint ?? 'Enter your phone number',
-      validator: SmartValidators.compose([
+      validator: SmartValidators.compose<String>([
         if (required) SmartValidators.required(requiredMessage),
         SmartValidators.phone(invalidMessage),
       ]),
@@ -200,6 +211,7 @@ class SmartField extends StatefulWidget {
       onChanged: onChanged,
       onSubmitted: onSubmitted,
       enabled: enabled,
+      autovalidateMode: autovalidateMode,
     );
   }
 
@@ -216,6 +228,8 @@ class _SmartFieldState extends State<SmartField> {
   SmartFormController? _formController;
   bool _obscureText = false;
   bool _isFocused = false;
+  bool _isValid = false;
+  bool _hasInteracted = false;
 
   @override
   void initState() {
@@ -228,10 +242,10 @@ class _SmartFieldState extends State<SmartField> {
 
     _focusNode.addListener(_onFocusChanged);
 
-    _registration = SmartFieldRegistration(
+    _registration = SmartFieldRegistration<String>(
       key: _fieldKey,
       focusNode: _focusNode,
-      controller: widget.controller,
+      getValue: () => widget.controller.text,
       validator: widget.validator,
       errorNotifier: _errorNotifier,
       shakeNotifier: _shakeNotifier,
@@ -253,8 +267,17 @@ class _SmartFieldState extends State<SmartField> {
     setState(() {
       _isFocused = _focusNode.hasFocus;
     });
-    // Note: Errors are cleared in onChanged when user starts typing,
-    // NOT here on focus gain - otherwise validation errors disappear immediately
+    // Validate on focus loss to show valid state
+    if (!_focusNode.hasFocus && _hasInteracted) {
+      _updateValidState();
+    }
+  }
+
+  void _updateValidState() {
+    final error = widget.validator?.call(widget.controller.text);
+    setState(() {
+      _isValid = error == null && widget.controller.text.isNotEmpty;
+    });
   }
 
   @override
@@ -289,9 +312,13 @@ class _SmartFieldState extends State<SmartField> {
               widget.label!,
               style: theme.textTheme.bodyMedium?.copyWith(
                 fontWeight: FontWeight.w500,
-                color: _isFocused
-                    ? theme.colorScheme.primary
-                    : theme.colorScheme.onSurface,
+                color: _errorNotifier.value != null
+                    ? theme.colorScheme.error
+                    : _isValid
+                        ? Colors.green
+                        : _isFocused
+                            ? theme.colorScheme.primary
+                            : theme.colorScheme.onSurface,
               ),
             ),
           ),
@@ -312,7 +339,15 @@ class _SmartFieldState extends State<SmartField> {
                             spreadRadius: 1,
                           ),
                         ]
-                      : null,
+                      : _isValid && _isFocused
+                          ? [
+                              BoxShadow(
+                                color: Colors.green.withValues(alpha: 0.15),
+                                blurRadius: 8,
+                                spreadRadius: 1,
+                              ),
+                            ]
+                          : null,
                 ),
                 child: TextField(
                   controller: widget.controller,
@@ -322,10 +357,17 @@ class _SmartFieldState extends State<SmartField> {
                   textInputAction: widget.textInputAction,
                   enabled: widget.enabled,
                   onChanged: (value) {
-                    // Clear error on change
-                    if (_errorNotifier.value != null) {
-                      _errorNotifier.value = null;
+                    _hasInteracted = true;
+                    // Clear error on change if not in autovalidate mode
+                    if (widget.autovalidateMode != AutovalidateMode.always && 
+                        widget.autovalidateMode != AutovalidateMode.onUserInteraction) {
+                      if (_errorNotifier.value != null) {
+                        _errorNotifier.value = null;
+                      }
+                    } else {
+                      _errorNotifier.value = widget.validator?.call(value);
                     }
+                    _updateValidState();
                     widget.onChanged?.call(value);
                   },
                   onSubmitted: (_) => widget.onSubmitted?.call(),
@@ -334,7 +376,16 @@ class _SmartFieldState extends State<SmartField> {
                         hintText: widget.hint,
                         errorText: error,
                         prefixIcon: widget.prefixIcon != null
-                            ? Icon(widget.prefixIcon)
+                            ? Icon(
+                                widget.prefixIcon,
+                                color: error != null
+                                    ? theme.colorScheme.error
+                                    : _isValid
+                                        ? Colors.green
+                                        : _isFocused
+                                            ? theme.colorScheme.primary
+                                            : null,
+                              )
                             : null,
                         suffixIcon: widget.showPasswordToggle
                             ? IconButton(
@@ -342,10 +393,13 @@ class _SmartFieldState extends State<SmartField> {
                                   _obscureText
                                       ? Icons.visibility_outlined
                                       : Icons.visibility_off_outlined,
+                                  color: _isValid ? Colors.green : null,
                                 ),
                                 onPressed: _togglePasswordVisibility,
                               )
-                            : null,
+                            : _isValid
+                                ? Icon(Icons.check_circle, color: Colors.green)
+                                : null,
                         filled: true,
                         fillColor: theme.colorScheme.surface,
                         border: OutlineInputBorder(
@@ -363,7 +417,7 @@ class _SmartFieldState extends State<SmartField> {
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: BorderSide(
-                            color: theme.colorScheme.primary,
+                            color: _isValid ? Colors.green : theme.colorScheme.primary,
                             width: 2,
                           ),
                         ),

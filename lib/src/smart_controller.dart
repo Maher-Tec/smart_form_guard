@@ -1,19 +1,22 @@
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
-import 'smart_validators.dart';
+
+/// A function that validates a value of type T.
+typedef SmartValidator<T> = String? Function(T? value);
 
 /// Represents a registered field in the form.
-class SmartFieldRegistration {
+class SmartFieldRegistration<T> {
   final GlobalKey key;
   final FocusNode focusNode;
-  final TextEditingController controller;
-  final SmartValidator? validator;
+  final T? Function() getValue;
+  final String? Function(T?)? validator;
   final ValueNotifier<String?> errorNotifier;
   final ValueNotifier<bool> shakeNotifier;
 
   SmartFieldRegistration({
     required this.key,
     required this.focusNode,
-    required this.controller,
+    required this.getValue,
     this.validator,
     required this.errorNotifier,
     required this.shakeNotifier,
@@ -22,25 +25,26 @@ class SmartFieldRegistration {
   /// Validates the field and returns the error message if invalid.
   String? validate() {
     if (validator == null) return null;
-    return validator!(controller.text);
+    return validator!(getValue());
   }
 }
 
 /// Controller that manages form state and validation.
 class SmartFormController extends ChangeNotifier {
-  final List<SmartFieldRegistration> _fields = [];
+  final List<SmartFieldRegistration<dynamic>> _fields = [];
   bool _isValidating = false;
+  bool enableHapticFeedback = true;
 
   /// Whether the form is currently validating.
   bool get isValidating => _isValidating;
 
   /// Registers a field with the form.
-  void registerField(SmartFieldRegistration field) {
+  void registerField(SmartFieldRegistration<dynamic> field) {
     _fields.add(field);
   }
 
   /// Unregisters a field from the form.
-  void unregisterField(SmartFieldRegistration field) {
+  void unregisterField(SmartFieldRegistration<dynamic> field) {
     _fields.remove(field);
   }
 
@@ -74,6 +78,10 @@ class SmartFormController extends ChangeNotifier {
     notifyListeners();
 
     if (firstInvalid != null) {
+      if (enableHapticFeedback) {
+        HapticFeedback.lightImpact();
+      }
+
       // Show error on the first invalid field
       firstInvalid.errorNotifier.value = firstError;
 

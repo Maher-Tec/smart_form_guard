@@ -46,6 +46,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final _passwordController = TextEditingController();
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
+  String? _selectedRole;
+  DateTime? _birthDate;
+  bool _agreedToTerms = false;
 
   @override
   void dispose() {
@@ -128,11 +131,83 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     ),
                     const SizedBox(height: 20),
 
-                    // Password field
                     SmartField.password(
                       controller: _passwordController,
                       label: 'Password',
-                      hint: 'At least 8 characters',
+                      hint: 'Enter your password',
+                      autovalidateMode: AutovalidateMode.onUserInteraction,
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Role Dropdown
+                    SmartDropdown<String>(
+                      label: 'Account Role',
+                      hint: 'Select your role',
+                      value: _selectedRole,
+                      prefixIcon: Icons.work_outline,
+                      items: [
+                        DropdownMenuItem(
+                          value: 'developer',
+                          child: Row(
+                            children: [
+                              Icon(Icons.code, size: 20, color: theme.colorScheme.primary),
+                              const SizedBox(width: 12),
+                              const Text('Developer'),
+                            ],
+                          ),
+                        ),
+                        DropdownMenuItem(
+                          value: 'designer',
+                          child: Row(
+                            children: [
+                              Icon(Icons.palette_outlined, size: 20, color: theme.colorScheme.tertiary),
+                              const SizedBox(width: 12),
+                              const Text('Designer'),
+                            ],
+                          ),
+                        ),
+                        DropdownMenuItem(
+                          value: 'manager',
+                          child: Row(
+                            children: [
+                              Icon(Icons.people_outline, size: 20, color: theme.colorScheme.secondary),
+                              const SizedBox(width: 12),
+                              const Text('Manager'),
+                            ],
+                          ),
+                        ),
+                        DropdownMenuItem(
+                          value: 'other',
+                          child: Row(
+                            children: [
+                              Icon(Icons.more_horiz, size: 20, color: theme.colorScheme.outline),
+                              const SizedBox(width: 12),
+                              const Text('Other'),
+                            ],
+                          ),
+                        ),
+                      ],
+                      validator: (value) => value == null ? 'Please select a role' : null,
+                      onChanged: (value) => setState(() => _selectedRole = value),
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    // Birth Date Picker
+                    SmartDatePicker(
+                      label: 'Birth Date',
+                      value: _birthDate,
+                      validator: (value) => value == null ? 'Please select your birth date' : null,
+                      onChanged: (value) => setState(() => _birthDate = value),
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Terms Checkbox
+                    SmartCheckbox(
+                      title: const Text('I agree to the Terms and Conditions'),
+                      value: _agreedToTerms,
+                      validator: (value) => value != true ? 'You must agree to continue' : null,
+                      onChanged: (value) => setState(() => _agreedToTerms = value ?? false),
                     ),
                     const SizedBox(height: 32),
 
