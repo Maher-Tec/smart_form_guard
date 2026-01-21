@@ -20,7 +20,7 @@
 ## 🎬 Demo
 
 <p align="center">
-  <img src="screens/demo.gif" width="300" alt="Smart Form Guard Demo"/>
+  <img src="https://raw.githubusercontent.com/Maher-Tec/smart_form_guard/main/screens/demo.gif" width="300" alt="Smart Form Guard Demo"/>
 </p>
 
 

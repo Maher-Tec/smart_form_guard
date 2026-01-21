@@ -1,6 +1,6 @@
 name: smart_form_guard
 description: "A smart Flutter form wrapper that validates fields, auto-focuses & scrolls to the first invalid field, and provides pleasant visual feedback."
-version: 2.0.0
+version: 2.0.1
 homepage: https://github.com/Maher-Tec/smart_form_guard
 repository: https://github.com/Maher-Tec/smart_form_guard
 issue_tracker: https://github.com/Maher-Tec/smart_form_guard/issues

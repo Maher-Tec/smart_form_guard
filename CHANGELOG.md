@@ -1,3 +1,7 @@
+## 2.0.1
+
+- Fix demo GIF not displaying on pub.dev (use absolute GitHub URL)
+
 ## 2.0.0
 
 Major update with new field types, core refactoring, and UX enhancements.
