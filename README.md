@@ -20,8 +20,9 @@
 ## 🎬 Demo
 
 <p align="center">
-  <img src="screens/1.mp4" width="300" alt="Smart Form Guard Demo"/>
+  <img src="screens/demo.gif" width="300" alt="Smart Form Guard Demo"/>
 </p>
+
 
 ---
 
