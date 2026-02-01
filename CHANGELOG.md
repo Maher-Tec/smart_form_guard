@@ -1,3 +1,8 @@
+## 2.2.1
+
+### Fixes
+- **Static Analysis**: Fixed deprecated usage of `withOpacity` by replacing it with `withValues` throughout the package to ensure full compatibility with modern Flutter versions and improve pub.dev score.
+
 ## 2.2.0
 
 ### New Features
