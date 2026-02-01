@@ -23,6 +23,9 @@ class SmartField extends StatefulWidget {
   /// The validator function for this field.
   final SmartValidator<String>? validator;
 
+  /// The async validator function for this field.
+  final SmartAsyncValidator<String>? asyncValidator;
+
   /// Whether to obscure the text (for passwords).
   final bool obscureText;
 
@@ -59,6 +62,7 @@ class SmartField extends StatefulWidget {
     this.label,
     this.hint,
     this.validator,
+    this.asyncValidator,
     this.obscureText = false,
     this.keyboardType,
     this.textInputAction,
@@ -80,6 +84,7 @@ class SmartField extends StatefulWidget {
     bool required = true,
     String? requiredMessage,
     String? invalidMessage,
+    SmartAsyncValidator<String>? asyncValidator,
     ValueChanged<String>? onChanged,
     VoidCallback? onSubmitted,
     bool enabled = true,
@@ -94,13 +99,15 @@ class SmartField extends StatefulWidget {
         if (required) SmartValidators.required(requiredMessage),
         SmartValidators.email(invalidMessage),
       ]),
+      asyncValidator: asyncValidator,
       keyboardType: TextInputType.emailAddress,
       textInputAction: TextInputAction.next,
       prefixIcon: Icons.email_outlined,
       onChanged: onChanged,
       onSubmitted: onSubmitted,
       enabled: enabled,
-      autovalidateMode: autovalidateMode,
+      // Default to real-time verification for email
+      autovalidateMode: autovalidateMode ?? AutovalidateMode.onUserInteraction,
     );
   }
 
@@ -151,6 +158,49 @@ class SmartField extends StatefulWidget {
     );
   }
 
+  /// Creates a password confirmation field.
+  /// 
+  /// Requires the original [passwordController] to compare against.
+  factory SmartField.confirmPassword({
+    Key? key,
+    required TextEditingController controller,
+    required TextEditingController passwordController,
+    String label = 'Confirm Password',
+    String? hint,
+    bool required = true,
+    String? requiredMessage,
+    String? mismatchMessage,
+    ValueChanged<String>? onChanged,
+    VoidCallback? onSubmitted,
+    bool enabled = true,
+    AutovalidateMode? autovalidateMode,
+  }) {
+    return SmartField(
+      key: key,
+      controller: controller,
+      label: label,
+      hint: hint ?? 'Confirm your password',
+      validator: (value) {
+        if (required && (value == null || value.isEmpty)) {
+          return requiredMessage ?? 'Please confirm your password';
+        }
+        if (value != passwordController.text) {
+          return mismatchMessage ?? 'Passwords do not match';
+        }
+        return null;
+      },
+      obscureText: true,
+      keyboardType: TextInputType.visiblePassword,
+      textInputAction: TextInputAction.done,
+      prefixIcon: Icons.lock_outline_rounded,
+      showPasswordToggle: true,
+      onChanged: onChanged,
+      onSubmitted: onSubmitted,
+      enabled: enabled,
+      autovalidateMode: autovalidateMode,
+    );
+  }
+
   /// Creates a required text field.
   factory SmartField.required({
     Key? key,
@@ -158,6 +208,7 @@ class SmartField extends StatefulWidget {
     required String label,
     String? hint,
     String? message,
+    SmartAsyncValidator<String>? asyncValidator,
     TextInputType? keyboardType,
     TextInputAction? textInputAction,
     IconData? prefixIcon,
@@ -172,6 +223,7 @@ class SmartField extends StatefulWidget {
       label: label,
       hint: hint,
       validator: SmartValidators.required(message),
+      asyncValidator: asyncValidator,
       keyboardType: keyboardType,
       textInputAction: textInputAction ?? TextInputAction.next,
       prefixIcon: prefixIcon,
@@ -191,6 +243,7 @@ class SmartField extends StatefulWidget {
     bool required = true,
     String? requiredMessage,
     String? invalidMessage,
+    SmartAsyncValidator<String>? asyncValidator,
     ValueChanged<String>? onChanged,
     VoidCallback? onSubmitted,
     bool enabled = true,
@@ -205,6 +258,7 @@ class SmartField extends StatefulWidget {
         if (required) SmartValidators.required(requiredMessage),
         SmartValidators.phone(invalidMessage),
       ]),
+      asyncValidator: asyncValidator,
       keyboardType: TextInputType.phone,
       textInputAction: TextInputAction.next,
       prefixIcon: Icons.phone_outlined,
@@ -224,6 +278,7 @@ class _SmartFieldState extends State<SmartField> {
   late FocusNode _focusNode;
   late ValueNotifier<String?> _errorNotifier;
   late ValueNotifier<bool> _shakeNotifier;
+  late ValueNotifier<bool> _loadingNotifier;
   late SmartFieldRegistration _registration;
   SmartFormController? _formController;
   bool _obscureText = false;
@@ -238,6 +293,7 @@ class _SmartFieldState extends State<SmartField> {
     _focusNode = FocusNode();
     _errorNotifier = ValueNotifier(null);
     _shakeNotifier = ValueNotifier(false);
+    _loadingNotifier = ValueNotifier(false);
     _obscureText = widget.obscureText;
 
     _focusNode.addListener(_onFocusChanged);
@@ -247,8 +303,10 @@ class _SmartFieldState extends State<SmartField> {
       focusNode: _focusNode,
       getValue: () => widget.controller.text,
       validator: widget.validator,
+      asyncValidator: widget.asyncValidator,
       errorNotifier: _errorNotifier,
       shakeNotifier: _shakeNotifier,
+      loadingNotifier: _loadingNotifier,
     );
   }
 
@@ -261,6 +319,35 @@ class _SmartFieldState extends State<SmartField> {
     // Register with new controller
     _formController = SmartFormScope.maybeOf(context);
     _formController?.registerField(_registration);
+  }
+
+  @override
+  void didUpdateWidget(SmartField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Update registration if critical properties change
+    if (widget.controller != oldWidget.controller || 
+        widget.validator != oldWidget.validator ||
+        widget.asyncValidator != oldWidget.asyncValidator) {
+      
+      _formController?.unregisterField(_registration);
+      
+      _registration = SmartFieldRegistration<String>(
+        key: _fieldKey,
+        focusNode: _focusNode,
+        getValue: () => widget.controller.text, // Capture new widget
+        validator: widget.validator,
+        asyncValidator: widget.asyncValidator,
+        errorNotifier: _errorNotifier,
+        shakeNotifier: _shakeNotifier,
+        loadingNotifier: _loadingNotifier,
+      );
+      
+      _formController?.registerField(_registration);
+    }
+    
+    if (widget.obscureText != oldWidget.obscureText) {
+      _obscureText = widget.obscureText;
+    }
   }
 
   void _onFocusChanged() {
@@ -287,6 +374,7 @@ class _SmartFieldState extends State<SmartField> {
     _focusNode.dispose();
     _errorNotifier.dispose();
     _shakeNotifier.dispose();
+    _loadingNotifier.dispose();
     super.dispose();
   }
 
@@ -308,18 +396,28 @@ class _SmartFieldState extends State<SmartField> {
         if (widget.label != null)
           Padding(
             padding: const EdgeInsets.only(bottom: 8),
-            child: Text(
-              widget.label!,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w500,
-                color: _errorNotifier.value != null
-                    ? theme.colorScheme.error
-                    : _isValid
-                        ? Colors.green
-                        : _isFocused
-                            ? theme.colorScheme.primary
-                            : theme.colorScheme.onSurface,
-              ),
+            child: Row(
+              children: [
+                ValueListenableBuilder<String?>(
+                  valueListenable: _errorNotifier,
+                  builder: (context, error, _) {
+                    return Text(
+                      widget.label!,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w500,
+                        color: error != null
+                            ? theme.colorScheme.error
+                            : _isValid
+                                ? Colors.green
+                                : _isFocused
+                                    ? theme.colorScheme.primary
+                                    : theme.colorScheme.onSurface,
+                      ),
+                    );
+                  }
+                ),
+                // Show loading indicator in label? No, usually in input.
+              ],
             ),
           ),
         ShakeAnimation(
@@ -339,7 +437,7 @@ class _SmartFieldState extends State<SmartField> {
                             spreadRadius: 1,
                           ),
                         ]
-                      : _isValid && _isFocused
+                      : _isValid
                           ? [
                               BoxShadow(
                                 color: Colors.green.withValues(alpha: 0.15),
@@ -349,92 +447,105 @@ class _SmartFieldState extends State<SmartField> {
                             ]
                           : null,
                 ),
-                child: TextField(
-                  controller: widget.controller,
-                  focusNode: _focusNode,
-                  obscureText: _obscureText,
-                  keyboardType: widget.keyboardType,
-                  textInputAction: widget.textInputAction,
-                  enabled: widget.enabled,
-                  onChanged: (value) {
-                    _hasInteracted = true;
-                    // Clear error on change if not in autovalidate mode
-                    if (widget.autovalidateMode != AutovalidateMode.always && 
-                        widget.autovalidateMode != AutovalidateMode.onUserInteraction) {
-                      if (_errorNotifier.value != null) {
-                        _errorNotifier.value = null;
-                      }
-                    } else {
-                      _errorNotifier.value = widget.validator?.call(value);
-                    }
-                    _updateValidState();
-                    widget.onChanged?.call(value);
-                  },
-                  onSubmitted: (_) => widget.onSubmitted?.call(),
-                  decoration: widget.decoration ??
-                      InputDecoration(
-                        hintText: widget.hint,
-                        errorText: error,
-                        prefixIcon: widget.prefixIcon != null
-                            ? Icon(
-                                widget.prefixIcon,
-                                color: error != null
-                                    ? theme.colorScheme.error
-                                    : _isValid
-                                        ? Colors.green
-                                        : _isFocused
-                                            ? theme.colorScheme.primary
-                                            : null,
-                              )
-                            : null,
-                        suffixIcon: widget.showPasswordToggle
-                            ? IconButton(
-                                icon: Icon(
-                                  _obscureText
-                                      ? Icons.visibility_outlined
-                                      : Icons.visibility_off_outlined,
-                                  color: _isValid ? Colors.green : null,
-                                ),
-                                onPressed: _togglePasswordVisibility,
-                              )
-                            : _isValid
-                                ? Icon(Icons.check_circle, color: Colors.green)
+                child: ValueListenableBuilder<bool>(
+                  valueListenable: _loadingNotifier,
+                  builder: (context, isLoading, _) {
+                    return TextField(
+                      controller: widget.controller,
+                      focusNode: _focusNode,
+                      obscureText: _obscureText,
+                      keyboardType: widget.keyboardType,
+                      textInputAction: widget.textInputAction,
+                      enabled: widget.enabled && !isLoading, // Disable while loading? Or just show spinner.
+                      onChanged: (value) {
+                        _hasInteracted = true;
+                        // Clear error on change if not in autovalidate mode
+                        if (widget.autovalidateMode != AutovalidateMode.always && 
+                            widget.autovalidateMode != AutovalidateMode.onUserInteraction) {
+                          if (_errorNotifier.value != null) {
+                            _errorNotifier.value = null;
+                          }
+                        } else {
+                          _errorNotifier.value = widget.validator?.call(value);
+                        }
+                        _updateValidState();
+                        widget.onChanged?.call(value);
+                      },
+                      onSubmitted: (_) => widget.onSubmitted?.call(),
+                      decoration: widget.decoration ??
+                          InputDecoration(
+                            hintText: widget.hint,
+                            errorText: error,
+                            prefixIcon: widget.prefixIcon != null
+                                ? Icon(
+                                    widget.prefixIcon,
+                                    color: error != null
+                                        ? theme.colorScheme.error
+                                        : _isValid
+                                            ? Colors.green
+                                            : _isFocused
+                                                ? theme.colorScheme.primary
+                                                : null,
+                                  )
                                 : null,
-                        filled: true,
-                        fillColor: theme.colorScheme.surface,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(
-                            color: theme.colorScheme.outline,
+                            suffixIcon: isLoading 
+                              ? Padding(
+                                  padding: const EdgeInsets.all(12),
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: theme.colorScheme.primary,
+                                  ),
+                                )
+                              : widget.showPasswordToggle
+                                ? IconButton(
+                                    icon: Icon(
+                                      _obscureText
+                                          ? Icons.visibility_outlined
+                                          : Icons.visibility_off_outlined,
+                                      color: _isValid ? Colors.green : null,
+                                    ),
+                                    onPressed: _togglePasswordVisibility,
+                                  )
+                                : _isValid
+                                    ? Icon(Icons.check_circle, color: Colors.green)
+                                    : null,
+                            filled: true,
+                            fillColor: theme.colorScheme.surface,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(
+                                color: theme.colorScheme.outline,
+                              ),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(
+                                color: theme.colorScheme.outline.withValues(alpha: 0.5),
+                              ),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(
+                                color: _isValid ? Colors.green : theme.colorScheme.primary,
+                                width: 2,
+                              ),
+                            ),
+                            errorBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(
+                                color: theme.colorScheme.error,
+                              ),
+                            ),
+                            focusedErrorBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(
+                                color: theme.colorScheme.error,
+                                width: 2,
+                              ),
+                            ),
                           ),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(
-                            color: theme.colorScheme.outline.withValues(alpha: 0.5),
-                          ),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(
-                            color: _isValid ? Colors.green : theme.colorScheme.primary,
-                            width: 2,
-                          ),
-                        ),
-                        errorBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(
-                            color: theme.colorScheme.error,
-                          ),
-                        ),
-                        focusedErrorBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(
-                            color: theme.colorScheme.error,
-                            width: 2,
-                          ),
-                        ),
-                      ),
+                    );
+                  },
                 ),
               );
             },

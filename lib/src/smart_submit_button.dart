@@ -74,10 +74,9 @@ class _SmartSubmitButtonState extends State<SmartSubmitButton> {
       setState(() => _isLoading = true);
     }
 
-    // Small delay for visual feedback
-    await Future.delayed(const Duration(milliseconds: 50));
 
-    final isValid = formState.validate();
+
+    final isValid = await formState.validateAsync();
 
     if (widget.showLoading) {
       setState(() => _isLoading = false);

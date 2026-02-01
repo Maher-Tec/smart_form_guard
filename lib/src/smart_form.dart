@@ -92,12 +92,23 @@ class SmartFormState extends State<SmartForm> {
     super.dispose();
   }
 
-  /// Validates all fields in the form.
+  /// Validates all fields in the form synchronously.
   /// 
   /// Returns true if all fields are valid.
   /// If invalid, focuses and scrolls to the first invalid field.
   bool validate() {
     final isValid = _controller.validate();
+    if (isValid) {
+      widget.onValid?.call();
+    } else {
+      widget.onInvalid?.call();
+    }
+    return isValid;
+  }
+
+  /// Validates all fields in the form asynchronously.
+  Future<bool> validateAsync() async {
+    final isValid = await _controller.validateAsync();
     if (isValid) {
       widget.onValid?.call();
     } else {

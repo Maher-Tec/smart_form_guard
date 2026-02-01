@@ -4,28 +4,56 @@ import 'package:flutter/widgets.dart';
 /// A function that validates a value of type T.
 typedef SmartValidator<T> = String? Function(T? value);
 
+/// A function that validates a value of type T asynchronously.
+typedef SmartAsyncValidator<T> = Future<String?> Function(T? value);
+
 /// Represents a registered field in the form.
 class SmartFieldRegistration<T> {
   final GlobalKey key;
   final FocusNode focusNode;
   final T? Function() getValue;
-  final String? Function(T?)? validator;
+  final SmartValidator<T>? validator;
+  final SmartAsyncValidator<T>? asyncValidator;
   final ValueNotifier<String?> errorNotifier;
   final ValueNotifier<bool> shakeNotifier;
+  final ValueNotifier<bool> loadingNotifier;
 
   SmartFieldRegistration({
     required this.key,
     required this.focusNode,
     required this.getValue,
     this.validator,
+    this.asyncValidator,
     required this.errorNotifier,
     required this.shakeNotifier,
+    required this.loadingNotifier,
   });
 
-  /// Validates the field and returns the error message if invalid.
+  bool get hasAsyncValidator => asyncValidator != null;
+
+  /// Validates the field synchronously and returns the error message if invalid.
   String? validate() {
     if (validator == null) return null;
     return validator!(getValue());
+  }
+
+  /// Validates the field asynchronously.
+  Future<String?> validateAsync() async {
+    // First run sync validator
+    final syncError = validate();
+    if (syncError != null) return syncError;
+
+    // Then run async validator if exists
+    if (asyncValidator != null) {
+      loadingNotifier.value = true;
+      try {
+        final error = await asyncValidator!(getValue());
+        return error;
+      } finally {
+        loadingNotifier.value = false;
+      }
+    }
+    return null;
   }
 }
 
@@ -48,7 +76,7 @@ class SmartFormController extends ChangeNotifier {
     _fields.remove(field);
   }
 
-  /// Validates all fields and returns true if all are valid.
+  /// Validates all fields synchronously and returns true if all are valid.
   /// 
   /// If invalid, focuses and scrolls to the first invalid field,
   /// triggers shake animation, and shows error message.
@@ -56,21 +84,24 @@ class SmartFormController extends ChangeNotifier {
     _isValidating = true;
     notifyListeners();
 
-    // Clear all previous errors
-    for (final field in _fields) {
-      field.errorNotifier.value = null;
-    }
+    // Clear all previous errors logic removed to prevent flashing/lag
+    // Existing error states will be updated in the loop below.
 
     // Find first invalid field
     SmartFieldRegistration? firstInvalid;
-    String? firstError;
 
     for (final field in _fields) {
       final error = field.validate();
-      if (error != null && firstInvalid == null) {
-        firstInvalid = field;
-        firstError = error;
-        break; // Only show first error (progressive validation)
+      if (error != null) {
+        // Show error immediately for all invalid fields
+        field.errorNotifier.value = error;
+        // Shake all invalid fields
+        field.shakeNotifier.value = false;
+        field.shakeNotifier.value = true;
+        
+        if (firstInvalid == null) {
+          firstInvalid = field;
+        }
       }
     }
 
@@ -78,26 +109,66 @@ class SmartFormController extends ChangeNotifier {
     notifyListeners();
 
     if (firstInvalid != null) {
-      if (enableHapticFeedback) {
-        HapticFeedback.lightImpact();
-      }
-
-      // Show error on the first invalid field
-      firstInvalid.errorNotifier.value = firstError;
-
-      // Trigger shake animation
-      firstInvalid.shakeNotifier.value = true;
-
-      // Focus the field
-      firstInvalid.focusNode.requestFocus();
-
-      // Scroll to the field
-      _scrollToField(firstInvalid);
-
+      _handleInvalidField(firstInvalid);
       return false;
     }
 
     return true;
+  }
+
+  /// Validates all fields asynchronously and returns true if all are valid.
+  Future<bool> validateAsync() async {
+    _isValidating = true;
+    notifyListeners();
+
+    SmartFieldRegistration? firstInvalid;
+    
+    for (final field in _fields) {
+      // 1. Sync check
+      String? error = field.validate();
+      
+      // 2. Async check if sync passed
+      if (error == null && field.hasAsyncValidator) {
+        error = await field.validateAsync();
+      }
+
+      if (error != null) {
+        field.errorNotifier.value = error; // Show error immediately
+        // Shake all invalid fields
+        field.shakeNotifier.value = false;
+        field.shakeNotifier.value = true;
+        
+        if (firstInvalid == null) {
+          firstInvalid = field;
+        }
+      }
+    }
+
+    _isValidating = false;
+    notifyListeners();
+
+    if (firstInvalid != null) {
+      _handleInvalidField(firstInvalid);
+      return false;
+    }
+
+    return true;
+  }
+
+  void _handleInvalidField(SmartFieldRegistration field) {
+      if (enableHapticFeedback) {
+        HapticFeedback.lightImpact();
+      }
+
+      // Focus the field immediately to trigger keyboard
+      field.focusNode.requestFocus();
+
+      // Scroll to the field after layout updates (e.g. error messages appearing)
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        // Small delay to allow keyboard to start finding its place and layout to settle
+        await Future.delayed(const Duration(milliseconds: 100));
+        _scrollToField(field);
+      });
   }
 
   /// Scrolls to make the field visible.
@@ -108,7 +179,7 @@ class SmartFormController extends ChangeNotifier {
         context,
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeOutCubic,
-        alignment: 0.3, // Show field 30% from top
+        alignment: 0.0, // Scroll to top
       );
     }
   }

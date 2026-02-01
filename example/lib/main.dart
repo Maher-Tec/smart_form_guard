@@ -44,9 +44,11 @@ class SignUpScreen extends StatefulWidget {
 class _SignUpScreenState extends State<SignUpScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
   String? _selectedRole;
+  String? _experienceLevel;
   DateTime? _birthDate;
   bool _agreedToTerms = false;
 
@@ -54,6 +56,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _confirmPasswordController.dispose();
     _nameController.dispose();
     _phoneController.dispose();
     super.dispose();
@@ -108,12 +111,22 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 onValid: _onFormValid,
                 child: Column(
                   children: [
-                    // Name field
-                    SmartField.required(
+                    // Username field with Async Validator
+                    SmartField(
                       controller: _nameController,
-                      label: 'Full Name',
-                      hint: 'Enter your full name',
-                      prefixIcon: Icons.person_outline,
+                      label: 'Username',
+                      hint: 'Choose a unique username',
+                      prefixIcon: Icons.alternate_email,
+                      validator: (value) => 
+                        (value == null || value.isEmpty) ? 'Username is required' : null,
+                      asyncValidator: (value) async {
+                        // Simulate network request
+                        await Future.delayed(const Duration(seconds: 2));
+                        if (value!.toLowerCase() == 'admin') {
+                          return 'This username is already taken';
+                        }
+                        return null;
+                      },
                     ),
                     const SizedBox(height: 20),
 
@@ -139,56 +152,60 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     ),
                     const SizedBox(height: 20),
 
+                    // Confirm Password
+                    SmartField.confirmPassword(
+                      controller: _confirmPasswordController, // Use persistent controller
+                      passwordController: _passwordController,
+                      label: 'Confirm Password',
+                      hint: 'Re-enter your password',
+                      autovalidateMode: AutovalidateMode.onUserInteraction,
+                    ),
+                    const SizedBox(height: 20),
+
                     // Role Dropdown
                     SmartDropdown<String>(
                       label: 'Account Role',
                       hint: 'Select your role',
                       value: _selectedRole,
                       prefixIcon: Icons.work_outline,
-                      items: [
-                        DropdownMenuItem(
-                          value: 'developer',
-                          child: Row(
-                            children: [
-                              Icon(Icons.code, size: 20, color: theme.colorScheme.primary),
-                              const SizedBox(width: 12),
-                              const Text('Developer'),
-                            ],
-                          ),
-                        ),
-                        DropdownMenuItem(
-                          value: 'designer',
-                          child: Row(
-                            children: [
-                              Icon(Icons.palette_outlined, size: 20, color: theme.colorScheme.tertiary),
-                              const SizedBox(width: 12),
-                              const Text('Designer'),
-                            ],
-                          ),
-                        ),
-                        DropdownMenuItem(
-                          value: 'manager',
-                          child: Row(
-                            children: [
-                              Icon(Icons.people_outline, size: 20, color: theme.colorScheme.secondary),
-                              const SizedBox(width: 12),
-                              const Text('Manager'),
-                            ],
-                          ),
-                        ),
-                        DropdownMenuItem(
-                          value: 'other',
-                          child: Row(
-                            children: [
-                              Icon(Icons.more_horiz, size: 20, color: theme.colorScheme.outline),
-                              const SizedBox(width: 12),
-                              const Text('Other'),
-                            ],
-                          ),
-                        ),
+                      items: const [
+                        DropdownMenuItem(value: 'developer', child: Text('Developer')),
+                        DropdownMenuItem(value: 'designer', child: Text('Designer')),
+                        DropdownMenuItem(value: 'manager', child: Text('Manager')),
+                        DropdownMenuItem(value: 'other', child: Text('Other')),
                       ],
                       validator: (value) => value == null ? 'Please select a role' : null,
                       onChanged: (value) => setState(() => _selectedRole = value),
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Experience Level Radio Group
+                    SmartRadioGroup<String>(
+                      label: 'Experience Level',
+                      activeColor: Colors.green,
+                      initialValue: _experienceLevel,
+                      options: const [
+                        SmartRadioOption(
+                          value: 'entry', 
+                          label: 'Entry Level', 
+                          description: '0-2 years',
+                          icon: Icons.school_outlined,
+                        ),
+                        SmartRadioOption(
+                          value: 'mid', 
+                          label: 'Mid Level', 
+                          description: '2-5 years',
+                          icon: Icons.trending_up,
+                        ),
+                        SmartRadioOption(
+                          value: 'senior', 
+                          label: 'Senior', 
+                          description: '5+ years',
+                          icon: Icons.star_outline,
+                        ),
+                      ],
+                      onChanged: (value) => setState(() => _experienceLevel = value),
+                      validator: (value) => value == null ? 'Please select experience level' : null,
                     ),
 
                     const SizedBox(height: 20),

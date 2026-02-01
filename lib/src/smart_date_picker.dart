@@ -9,7 +9,13 @@ class SmartDatePicker extends StatefulWidget {
   final ValueChanged<DateTime?> onChanged;
   final String? label;
   final String? hint;
+
+  /// The validator function for this field.
   final SmartValidator<DateTime>? validator;
+
+  /// The async validator function for this field.
+  final SmartAsyncValidator<DateTime>? asyncValidator;
+
   final DateTime? firstDate;
   final DateTime? lastDate;
   final bool enabled;
@@ -23,6 +29,7 @@ class SmartDatePicker extends StatefulWidget {
     this.label,
     this.hint,
     this.validator,
+    this.asyncValidator,
     this.firstDate,
     this.lastDate,
     this.enabled = true,
@@ -39,6 +46,7 @@ class _SmartDatePickerState extends State<SmartDatePicker> {
   late FocusNode _focusNode;
   late ValueNotifier<String?> _errorNotifier;
   late ValueNotifier<bool> _shakeNotifier;
+  late ValueNotifier<bool> _loadingNotifier;
   late SmartFieldRegistration<DateTime> _registration;
   SmartFormController? _formController;
   final _textController = TextEditingController();
@@ -52,6 +60,7 @@ class _SmartDatePickerState extends State<SmartDatePicker> {
     _focusNode = FocusNode();
     _errorNotifier = ValueNotifier(null);
     _shakeNotifier = ValueNotifier(false);
+    _loadingNotifier = ValueNotifier(false);
     _updateText();
     _updateValidState();
 
@@ -62,8 +71,10 @@ class _SmartDatePickerState extends State<SmartDatePicker> {
       focusNode: _focusNode,
       getValue: () => widget.value,
       validator: widget.validator,
+      asyncValidator: widget.asyncValidator,
       errorNotifier: _errorNotifier,
       shakeNotifier: _shakeNotifier,
+      loadingNotifier: _loadingNotifier,
     );
   }
 
@@ -114,11 +125,13 @@ class _SmartDatePickerState extends State<SmartDatePicker> {
     _textController.dispose();
     _errorNotifier.dispose();
     _shakeNotifier.dispose();
+    _loadingNotifier.dispose();
     super.dispose();
   }
 
   Future<void> _selectDate() async {
     if (!widget.enabled) return;
+    if (_loadingNotifier.value) return; // Ignore input while loading
 
     final picked = await showDatePicker(
       context: context,
@@ -196,64 +209,77 @@ class _SmartDatePickerState extends State<SmartDatePicker> {
                                 ]
                               : null,
                 ),
-                child: TextField(
-                  controller: _textController,
-                  focusNode: _focusNode,
-                  readOnly: true,
-                  enabled: widget.enabled,
-                  onTap: _selectDate,
-                  decoration: widget.decoration ??
-                      InputDecoration(
-                        hintText: widget.hint ?? 'Select date',
-                        errorText: error,
-                        prefixIcon: Icon(
-                          Icons.calendar_today_outlined,
-                          color: error != null
-                              ? theme.colorScheme.error
-                              : _isValid
-                                  ? Colors.green
-                                  : _isFocused
-                                      ? theme.colorScheme.primary
-                                      : null,
-                        ),
-                        suffixIcon: _isValid
-                            ? const Icon(Icons.check_circle, color: Colors.green)
-                            : null,
-                        filled: true,
-                        fillColor: theme.colorScheme.surface,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(
-                            color: theme.colorScheme.outline,
+                child: ValueListenableBuilder<bool>(
+                  valueListenable: _loadingNotifier,
+                  builder: (context, isLoading, _) {
+                    return TextField(
+                      controller: _textController,
+                      focusNode: _focusNode,
+                      readOnly: true,
+                      enabled: widget.enabled && !isLoading,
+                      onTap: _selectDate,
+                      decoration: widget.decoration ??
+                          InputDecoration(
+                            hintText: widget.hint ?? 'Select date',
+                            errorText: error,
+                            prefixIcon: Icon(
+                              Icons.calendar_today_outlined,
+                              color: error != null
+                                  ? theme.colorScheme.error
+                                  : _isValid
+                                      ? Colors.green
+                                      : _isFocused
+                                          ? theme.colorScheme.primary
+                                          : null,
+                            ),
+                            suffixIcon: isLoading
+                                ? Padding(
+                                    padding: const EdgeInsets.all(12),
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: theme.colorScheme.primary,
+                                    ),
+                                  )
+                                : _isValid
+                                    ? const Icon(Icons.check_circle, color: Colors.green)
+                                    : null,
+                            filled: true,
+                            fillColor: theme.colorScheme.surface,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(
+                                color: theme.colorScheme.outline,
+                              ),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(
+                                color: theme.colorScheme.outline.withValues(alpha: 0.5),
+                              ),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(
+                                color: _isValid ? Colors.green : theme.colorScheme.primary,
+                                width: 2,
+                              ),
+                            ),
+                            errorBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(
+                                color: theme.colorScheme.error,
+                              ),
+                            ),
+                            focusedErrorBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(
+                                color: theme.colorScheme.error,
+                                width: 2,
+                              ),
+                            ),
                           ),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(
-                            color: theme.colorScheme.outline.withValues(alpha: 0.5),
-                          ),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(
-                            color: _isValid ? Colors.green : theme.colorScheme.primary,
-                            width: 2,
-                          ),
-                        ),
-                        errorBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(
-                            color: theme.colorScheme.error,
-                          ),
-                        ),
-                        focusedErrorBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(
-                            color: theme.colorScheme.error,
-                            width: 2,
-                          ),
-                        ),
-                      ),
+                    );
+                  }
                 ),
               );
             },

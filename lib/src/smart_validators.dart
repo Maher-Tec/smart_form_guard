@@ -15,15 +15,36 @@ class SmartValidators {
   }
 
   /// Creates a validator that checks if the value is a valid email address.
+  /// 
+  /// Provides real-time feedback for common issues:
+  /// - Missing '@'
+  /// - Missing domain part
   static SmartValidator<String> email([String? message]) {
     return (value) {
       if (value == null || value.trim().isEmpty) {
         return null; // Let required() handle empty check
       }
+      
+      final text = value.trim();
+      
+      if (!text.contains('@')) {
+        return 'Email must contain "@"';
+      }
+      
+      final parts = text.split('@');
+      if (parts.length > 2) {
+        return 'Email cannot contain multiple "@"';
+      }
+      
+      if (parts.last.isEmpty || !parts.last.contains('.')) {
+        return 'Email must contain a valid domain (e.g. .com)';
+      }
+      
+      // Strict regex for final validation
       final emailRegex = RegExp(
         r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
       );
-      if (!emailRegex.hasMatch(value.trim())) {
+      if (!emailRegex.hasMatch(text)) {
         return message ?? 'Please enter a valid email address';
       }
       return null;

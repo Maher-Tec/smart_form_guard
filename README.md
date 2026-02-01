@@ -58,7 +58,7 @@
 
 ```yaml
 dependencies:
-  smart_form_guard: ^2.0.0
+  smart_form_guard: ^2.2.0
 ```
 
 ```bash
@@ -115,6 +115,7 @@ That's it! No boilerplate. No manual focus management. No manual scroll logic.
 | `SmartDropdown<T>()` | Dropdown with validation & icons |
 | `SmartCheckbox()` | Checkbox for terms/agreements |
 | `SmartDatePicker()` | Date selection with validation |
+| `SmartRadioGroup<T>()` | Animated radio group with validation |
 | `SmartSubmitButton()` | Submit with loading state |
 
 ---
@@ -175,6 +176,34 @@ SmartDropdown<String>(
 )
 ```
 
+### Async Validation
+
+```dart
+SmartField(
+  label: 'Username',
+  validator: (v) => v!.isEmpty ? 'Required' : null,
+  asyncValidator: (v) async {
+    await Future.delayed(Duration(seconds: 1)); // Simulate API
+    if (v == 'admin') return 'Username taken';
+    return null;
+  },
+)
+```
+
+### Smart Radio Group
+
+```dart
+SmartRadioGroup<String>(
+  label: 'Role',
+  options: [
+    SmartRadioOption(value: 'dev', label: 'Developer', icon: Icons.code),
+    SmartRadioOption(value: 'des', label: 'Designer', icon: Icons.brush),
+  ],
+  onChanged: (val) => print(val),
+  validator: (v) => v == null ? 'Select a role' : null,
+)
+```
+
 ---
 
 ## ⚙️ SmartForm Options
@@ -224,8 +253,19 @@ All core functionality is covered with unit tests.
 
 ---
 
-## 📋 Version 2.0.0 Highlights
+## 📋 Version 2.2.0 Highlights
+- ✅ **Granular Email Validation**: Real-time feedback for specific errors (e.g. missing '@', invalid domain).
+- ✅ **Persistent Valid State**: Green glow now appears whenever a field is valid, ensuring clear positive feedback.
+- ✅ **Real-time Validation**: `SmartField.email()` now defaults to `AutovalidateMode.onUserInteraction` for immediate feedback.
+- ✅ **UI Fixes**: Enhanced `SmartRadioGroup` error states with red outlines and labels.
 
+## 📋 Version 2.1.0 Highlights
+- ✅ **Async Validation**: Validate fields asynchronously with built-in loading spinners.
+- ✅ **New Widget**: `SmartRadioGroup` - A premium, animated radio group.
+- ✅ **New Field**: `SmartField.confirmPassword()` - Built-in password confirmation logic.
+- ✅ **Enhanced Widgets**: Loading indicators added to all fields.
+
+## 📋 Version 2.0.0 Highlights
 - ✅ **New Widgets**: SmartDropdown, SmartCheckbox, SmartDatePicker
 - ✅ **Valid State UI**: Green borders, glows, and checkmarks
 - ✅ **Haptic Feedback**: Subtle vibrations on validation errors

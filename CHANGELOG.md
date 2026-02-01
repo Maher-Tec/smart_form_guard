@@ -1,3 +1,31 @@
+## 2.2.0
+
+### New Features
+- **Granular Email Validation**: SmartField.email() now provides specific error messages (e.g., "Email must contain '@'", "Invalid domain") instead of a generic error.
+- **Persistent Valid State**: Fields now show a green validation glow whenever they are valid, providing persistent positive feedback.
+- **Improved SmartRadioGroup**: Errors on radio groups now trigger a red border on the radio indicator and label text red color change.
+
+### Improvements & Fixes
+- **Robust Scroll-to-Error**: Fixed an issue where "scroll-to-top" was inaccurate when multiple errors appeared. Added post-frame layout detection for precise scrolling.
+- **Shake Animation Fix**: Fixed a race condition where the shake animation wouldn't trigger if the form was re-validated quickly or already had an error state.
+- **Real-time Defaults**: `SmartField.email()` now defaults to `AutovalidateMode.onUserInteraction` to give immediate feedback.
+
+## 2.1.0
+
+### New Features
+- **Async Validation**: Support for asynchronous validators with automatic loading spinners for all fields.
+- **SmartRadioGroup**: A polished, animated radio button group widget with full form integration.
+- **Confirm Password**: `SmartField.confirmPassword()` factory constructor for matching password fields.
+
+### Improvements
+- **Loading Indicators**: All fields now display a loading spinner in the suffix area during async validation.
+- **Refined Validation Logic**: SmartForm now prioritizes synchronous validation before executing async checks.
+
+### UI Enhancements
+- Fixed `SmartRadioGroup` text visibility issues in dark mode.
+- Ensured radio button indicator is always visible even with icons.
+- Added green accent color to `SmartRadioGroup` example.
+
 ## 2.0.2
 
 - Update `intl` dependency to ^0.20.0 for latest version support

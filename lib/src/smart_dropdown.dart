@@ -9,7 +9,13 @@ class SmartDropdown<T> extends StatefulWidget {
   final ValueChanged<T?>? onChanged;
   final String? label;
   final String? hint;
+
+  /// The validator function for this field.
   final SmartValidator<T>? validator;
+
+  /// The async validator function for this field.
+  final SmartAsyncValidator<T>? asyncValidator;
+
   final bool enabled;
   final InputDecoration? decoration;
   final IconData? prefixIcon;
@@ -26,6 +32,7 @@ class SmartDropdown<T> extends StatefulWidget {
     this.label,
     this.hint,
     this.validator,
+    this.asyncValidator,
     this.enabled = true,
     this.decoration,
     this.prefixIcon,
@@ -44,6 +51,7 @@ class _SmartDropdownState<T> extends State<SmartDropdown<T>> {
   late FocusNode _focusNode;
   late ValueNotifier<String?> _errorNotifier;
   late ValueNotifier<bool> _shakeNotifier;
+  late ValueNotifier<bool> _loadingNotifier;
   late SmartFieldRegistration<T> _registration;
   SmartFormController? _formController;
   T? _currentValue;
@@ -57,6 +65,7 @@ class _SmartDropdownState<T> extends State<SmartDropdown<T>> {
     _focusNode = FocusNode();
     _errorNotifier = ValueNotifier(null);
     _shakeNotifier = ValueNotifier(false);
+    _loadingNotifier = ValueNotifier(false);
     _currentValue = widget.value;
     _updateValidState();
 
@@ -67,8 +76,10 @@ class _SmartDropdownState<T> extends State<SmartDropdown<T>> {
       focusNode: _focusNode,
       getValue: () => _currentValue,
       validator: widget.validator,
+      asyncValidator: widget.asyncValidator,
       errorNotifier: _errorNotifier,
       shakeNotifier: _shakeNotifier,
+      loadingNotifier: _loadingNotifier,
     );
   }
 
@@ -108,6 +119,7 @@ class _SmartDropdownState<T> extends State<SmartDropdown<T>> {
     _focusNode.dispose();
     _errorNotifier.dispose();
     _shakeNotifier.dispose();
+    _loadingNotifier.dispose();
     super.dispose();
   }
 
@@ -177,118 +189,134 @@ class _SmartDropdownState<T> extends State<SmartDropdown<T>> {
                                 ]
                               : null,
                 ),
-                child: DropdownButtonFormField<T>(
-                  initialValue: _currentValue,
-                  items: widget.items,
-                  focusNode: _focusNode,
-                  isExpanded: true,
-                  icon: AnimatedRotation(
-                    turns: _isFocused ? 0.5 : 0,
-                    duration: const Duration(milliseconds: 200),
-                    child: Icon(
-                      Icons.keyboard_arrow_down_rounded,
-                      color: error != null
-                          ? theme.colorScheme.error
-                          : _isValid
-                              ? Colors.green
-                              : _isFocused
-                                  ? theme.colorScheme.primary
-                                  : theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  dropdownColor: theme.colorScheme.surfaceContainer,
-                  borderRadius: BorderRadius.circular(widget.borderRadius),
-                  elevation: widget.elevation,
-                  menuMaxHeight: widget.menuMaxHeight,
-                  padding: EdgeInsets.zero,
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    color: theme.colorScheme.onSurface,
-                  ),
-                  selectedItemBuilder: (context) {
-                    return widget.items.map((item) {
-                      return Container(
-                        alignment: Alignment.centerLeft,
-                        child: DefaultTextStyle(
-                          style: theme.textTheme.bodyLarge!.copyWith(
-                            color: theme.colorScheme.onSurface,
-                            fontWeight: FontWeight.w500,
-                          ),
-                          child: item.child,
-                        ),
-                      );
-                    }).toList();
-                  },
-                  onChanged: widget.enabled
-                      ? (value) {
-                          setState(() {
-                            _currentValue = value;
-                          });
-                          if (_errorNotifier.value != null) {
-                            _errorNotifier.value = null;
-                          }
-                          _updateValidState();
-                          widget.onChanged?.call(value);
-                        }
-                      : null,
-                  decoration: widget.decoration ??
-                      InputDecoration(
-                        hintText: widget.hint,
-                        hintStyle: theme.textTheme.bodyLarge?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
-                        ),
-                        errorText: error,
-                        prefixIcon: widget.prefix ??
-                            (widget.prefixIcon != null
-                                ? Icon(
-                                    widget.prefixIcon,
-                                    color: error != null
-                                        ? theme.colorScheme.error
-                                        : _isValid
-                                            ? Colors.green
-                                            : _isFocused
-                                                ? theme.colorScheme.primary
-                                                : theme.colorScheme.onSurfaceVariant,
-                                  )
-                                : null),
-                        suffixIcon: _isValid
-                            ? const Icon(Icons.check_circle, color: Colors.green)
-                            : null,
-                        filled: true,
-                        fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(widget.borderRadius),
-                          borderSide: BorderSide(
-                            color: theme.colorScheme.outline,
-                          ),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(widget.borderRadius),
-                          borderSide: BorderSide(
-                            color: theme.colorScheme.outline.withValues(alpha: 0.5),
-                          ),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(widget.borderRadius),
-                          borderSide: BorderSide(
-                            color: _isValid ? Colors.green : theme.colorScheme.primary,
-                            width: 2,
-                          ),
-                        ),
-                        errorBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(widget.borderRadius),
-                          borderSide: BorderSide(
-                            color: theme.colorScheme.error,
-                          ),
-                        ),
-                        focusedErrorBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(widget.borderRadius),
-                          borderSide: BorderSide(
-                            color: theme.colorScheme.error,
-                            width: 2,
-                          ),
-                        ),
+                child: ValueListenableBuilder<bool>(
+                  valueListenable: _loadingNotifier,
+                  builder: (context, isLoading, _) {
+                    return DropdownButtonFormField<T>(
+                      initialValue: _currentValue,
+                      items: widget.items,
+                      focusNode: _focusNode,
+                      isExpanded: true,
+                      icon: isLoading 
+                          ? SizedBox(
+                              width: 24, 
+                              height: 24, 
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: _isValid ? Colors.green : theme.colorScheme.primary,
+                              ),
+                            )
+                          : AnimatedRotation(
+                              turns: _isFocused ? 0.5 : 0,
+                              duration: const Duration(milliseconds: 200),
+                              child: Icon(
+                                Icons.keyboard_arrow_down_rounded,
+                                color: error != null
+                                    ? theme.colorScheme.error
+                                    : _isValid
+                                        ? Colors.green
+                                        : _isFocused
+                                            ? theme.colorScheme.primary
+                                            : theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                      dropdownColor: theme.colorScheme.surfaceContainer,
+                      borderRadius: BorderRadius.circular(widget.borderRadius),
+                      elevation: widget.elevation,
+                      menuMaxHeight: widget.menuMaxHeight,
+                      padding: EdgeInsets.zero,
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        color: theme.colorScheme.onSurface,
                       ),
+                      selectedItemBuilder: (context) {
+                        return widget.items.map((item) {
+                          return Container(
+                            alignment: Alignment.centerLeft,
+                            child: DefaultTextStyle(
+                              style: theme.textTheme.bodyLarge!.copyWith(
+                                color: theme.colorScheme.onSurface,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              child: item.child,
+                            ),
+                          );
+                        }).toList();
+                      },
+                      onChanged: widget.enabled && !isLoading
+                          ? (value) {
+                              setState(() {
+                                _currentValue = value;
+                              });
+                              if (_errorNotifier.value != null) {
+                                _errorNotifier.value = null;
+                              }
+                              _updateValidState();
+                              widget.onChanged?.call(value);
+                            }
+                          : null,
+                      decoration: widget.decoration ??
+                          InputDecoration(
+                            hintText: widget.hint,
+                            hintStyle: theme.textTheme.bodyLarge?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                            ),
+                            errorText: error,
+                            prefixIcon: widget.prefix ??
+                                (widget.prefixIcon != null
+                                    ? Icon(
+                                        widget.prefixIcon,
+                                        color: error != null
+                                            ? theme.colorScheme.error
+                                            : _isValid
+                                                ? Colors.green
+                                                : _isFocused
+                                                    ? theme.colorScheme.primary
+                                                    : theme.colorScheme.onSurfaceVariant,
+                                      )
+                                    : null),
+                            suffixIcon: null, // Dropdown handles suffix logic via icon param mostly, but we can override suffixIcon if needed.
+                            // However, we want the dropdown arrow to be replaced by loader which we did in `icon:` property.
+                            // But wait, suffixIcon sits to the right of the dropdown arrow usually in InputDecorator, but DropdownButtonFormField puts the arrow in suffix.
+                            // Actually DropdownButtonFormField uses the `icon` property as the dropdown arrow.
+                            
+                            filled: true,
+                            fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(widget.borderRadius),
+                              borderSide: BorderSide(
+                                color: theme.colorScheme.outline,
+                              ),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(widget.borderRadius),
+                              borderSide: BorderSide(
+                                color: theme.colorScheme.outline.withValues(alpha: 0.5),
+                              ),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(widget.borderRadius),
+                              borderSide: BorderSide(
+                                color: _isValid ? Colors.green : theme.colorScheme.primary,
+                                width: 2,
+                              ),
+                            ),
+                            errorBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(widget.borderRadius),
+                              borderSide: BorderSide(
+                                color: theme.colorScheme.error,
+                              ),
+                            ),
+                            focusedErrorBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(widget.borderRadius),
+                              borderSide: BorderSide(
+                                color: theme.colorScheme.error,
+                                width: 2,
+                              ),
+                            ),
+                          ),
+                    );
+                  }
                 ),
               );
             },
