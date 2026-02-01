@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+
 import 'smart_controller.dart';
 import 'animations/shake_animation.dart';
 

@@ -1,3 +1,8 @@
+## 2.2.2
+
+### Fixes
+- **Code Cleanup**: Removed unnecessary import of `flutter/services.dart` to fix static analysis info hints.
+
 ## 2.2.1
 
 ### Fixes

@@ -58,7 +58,7 @@
 
 ```yaml
 dependencies:
-  smart_form_guard: ^2.2.1
+  smart_form_guard: ^2.2.2
 ```
 
 ```bash
@@ -253,7 +253,7 @@ All core functionality is covered with unit tests.
 
 ---
 
-## 📋 Version 2.2.1 & 2.2.0 Highlights
+## 📋 Version 2.2.2 & 2.2.0 Highlights
 - ✅ **Static Analysis Fixes**: Resolved deprecated API usage for better stability (v2.2.1).
 - ✅ **Granular Email Validation**: Real-time feedback for specific errors (e.g. missing '@', invalid domain).
 - ✅ **Persistent Valid State**: Green glow now appears whenever a field is valid, ensuring clear positive feedback.
