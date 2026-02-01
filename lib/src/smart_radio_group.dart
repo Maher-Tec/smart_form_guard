@@ -264,7 +264,7 @@ class _SmartRadioGroupState<T> extends State<SmartRadioGroup<T>> {
         }
       } else {
         // Unselected, No Error
-        borderColor = theme.dividerColor.withOpacity(0.5);
+        borderColor = theme.dividerColor.withValues(alpha: 0.5);
         glowColor = Colors.transparent;
       }
     }
@@ -279,7 +279,7 @@ class _SmartRadioGroupState<T> extends State<SmartRadioGroup<T>> {
             : EdgeInsets.only(right: widget.spacing),
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
         decoration: BoxDecoration(
-          color: isSelected ? borderColor.withOpacity(0.05) : theme.cardColor,
+          color: isSelected ? borderColor.withValues(alpha: 0.05) : theme.cardColor,
           border: Border.all(
             color: borderColor,
             width: isSelected ? 2 : 1,
@@ -288,7 +288,7 @@ class _SmartRadioGroupState<T> extends State<SmartRadioGroup<T>> {
           boxShadow: [
              if (isSelected)
               BoxShadow(
-                color: glowColor.withOpacity(0.2),
+                color: glowColor.withValues(alpha: 0.2),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -305,7 +305,7 @@ class _SmartRadioGroupState<T> extends State<SmartRadioGroup<T>> {
                 shape: BoxShape.circle,
                 border: Border.all(
                   // Use borderColor so it matches error red if valid
-                   color: borderColor == theme.dividerColor.withOpacity(0.5) 
+                   color: borderColor == theme.dividerColor.withValues(alpha: 0.5) 
                       ? theme.disabledColor 
                       : borderColor,
                   width: isSelected ? 6 : 2,
@@ -319,7 +319,7 @@ class _SmartRadioGroupState<T> extends State<SmartRadioGroup<T>> {
               Icon(
                 option.icon,
                 size: 24,
-                color: isSelected ? activeColor : theme.iconTheme.color?.withOpacity(0.6),
+                color: isSelected ? activeColor : theme.iconTheme.color?.withValues(alpha: 0.6),
               ),
               const SizedBox(width: 12),
             ],
@@ -341,7 +341,7 @@ class _SmartRadioGroupState<T> extends State<SmartRadioGroup<T>> {
                     Text(
                       option.description!,
                        style: TextStyle(
-                        color: onSurface.withOpacity(0.6),
+                        color: onSurface.withValues(alpha: 0.6),
                         fontSize: 12,
                       ),
                     ),

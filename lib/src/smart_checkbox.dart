@@ -121,13 +121,13 @@ class _SmartCheckboxState extends State<SmartCheckbox> {
                             ? Colors.green 
                             : _isFocused 
                                 ? theme.colorScheme.primary 
-                                : theme.colorScheme.outline.withOpacity(0.5),
+                                : theme.colorScheme.outline.withValues(alpha: 0.5),
                      width: (_isValid || _isFocused || error != null) ? 2 : 1,
                   ),
                   boxShadow: error != null
                       ? [
                           BoxShadow(
-                            color: theme.colorScheme.error.withOpacity(0.15),
+                            color: theme.colorScheme.error.withValues(alpha: 0.15),
                             blurRadius: 8,
                             spreadRadius: 1,
                           ),
@@ -135,7 +135,7 @@ class _SmartCheckboxState extends State<SmartCheckbox> {
                       : _isValid
                           ? [
                               BoxShadow(
-                                color: Colors.green.withOpacity(0.15),
+                                color: Colors.green.withValues(alpha: 0.15),
                                 blurRadius: 8,
                                 spreadRadius: 1,
                               ),
@@ -143,7 +143,7 @@ class _SmartCheckboxState extends State<SmartCheckbox> {
                           : _isFocused
                               ? [
                                   BoxShadow(
-                                    color: theme.colorScheme.primary.withOpacity(0.1),
+                                    color: theme.colorScheme.primary.withValues(alpha: 0.1),
                                     blurRadius: 8,
                                     spreadRadius: 1,
                                   ),
